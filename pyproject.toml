@@ -1,0 +1,16 @@
+[project]
+name = "e-mail-processor"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "beautifulsoup4>=4.14.3",
+    "google-api-python-client>=2.70.0",
+    "google-auth-httplib2>=0.1.0",
+    "google-auth-oauthlib>=1.0.0",
+    "pdf2image>=1.16.0",
+    "pillow>=10.0.0",
+    "pypdf2>=3.0.0",
+    "pyzbar>=0.1.9",
+]

@@ -1,0 +1,58 @@
+name: Process Invoices
+
+on:
+  schedule:
+    # Run daily at 9:00 AM UTC (adjust timezone as needed)
+    - cron: '0 9 * * *'
+  
+  # Allow manual trigger from Actions tab
+  workflow_dispatch:
+
+jobs:
+  process-invoices:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libzbar0 poppler-utils
+      
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      
+      - name: Setup credentials
+        env:
+          CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          TOKEN_JSON: ${{ secrets.GOOGLE_TOKEN_JSON }}
+        run: |
+          echo "$CLIENT_SECRET" > client_secret_544079871095-7eo15ghsvks1u43urcft84afblheu732.apps.googleusercontent.com.json
+          echo "$TOKEN_JSON" > token.json
+      
+      - name: Run Iskon processor
+        run: |
+          uv run iskon_invoice_processor.py
+      
+      - name: Run Tomato processor
+        run: |
+          uv run tomato_invoice_processor.py
+        continue-on-error: true
+      
+      - name: Update token (if refreshed)
+        if: always()
+        run: |
+          if [ -f token.json ]; then
+            echo "Token file exists, consider updating secret if refreshed"
+            # Note: You'll need to manually update the secret periodically
+            # or implement automatic secret updates via GitHub API
+          fi
