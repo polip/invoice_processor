@@ -31,7 +31,7 @@ SCOPES = [
 
 # Configuration
 SENDER_EMAIL = 'moj.racun@tomato.com.hr'  # Email address to filter for Iskon invoices
-SEARCH_DAYS = 120 # How many days back to search
+SEARCH_DAYS = 10 # How many days back to search
 DRIVE_FOLDER_NAME = 'Tomato'
 
 
@@ -48,7 +48,7 @@ def authenticate():
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
-                'iskon_token.json', SCOPES)
+                'client_secret_544079871095-7eo15ghsvks1u43urcft84afblheu732.apps.googleusercontent.com', SCOPES)
             creds = flow.run_local_server(port=0)
 
         # Save the credentials for the next run
