@@ -41,11 +41,11 @@ jobs:
       
       - name: Run Iskon processor
         run: |
-          uv run iskon_invoice_processor.py
+          uv run iskon.py
       
       - name: Run Tomato processor
         run: |
-          uv run tomato_invoice_processor.py
+          uv run tomato.py
         continue-on-error: true
       
       - name: Update token (if refreshed)
