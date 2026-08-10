@@ -2,6 +2,8 @@
 
 Email invoice processor for Croatian telecom providers (Iskon and Tomato). Automatically fetches invoices from Gmail, processes attachments, and uploads them to Google Drive with optional automated scheduling.
 
+> **Developer note**: see `AGENTS.md` for agent-specific context, known bugs, and repo conventions.
+
 ## Features
 
 - **Automated Email Fetching**: Searches Gmail for invoices from Iskon and Tomato
@@ -65,7 +67,7 @@ brew install poppler zbar
    - Click "Create Credentials" → "OAuth client ID"
    - Choose "Desktop app" as application type
    - Download the credentials JSON file
-   - Save it in the project directory (file already present: `client_secret_544079871095-7eo15ghsvks1u43urcft84afblheu732.apps.googleusercontent.com.json`)
+   - Save it in the project directory 
 
 ### 2. First-Time Authentication
 
