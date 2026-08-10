@@ -1,9 +1,10 @@
-Setup Instructions for Iskon Invoice Processor
-===============================================
+Setup Instructions for Invoice Processors
+=========================================
 
 1. Install system dependencies (for barcode scanning):
 
    Ubuntu/Debian:
+   sudo apt-get update
    sudo apt-get install poppler-utils libzbar0
 
    macOS:
@@ -15,7 +16,7 @@ Setup Instructions for Iskon Invoice Processor
 3. Set up Google Cloud Project:
    a. Go to https://console.cloud.google.com/
    b. Create a new project (or use existing)
-   c. Enable Gmail API and Google Drive API:
+   c. Enable required APIs:
       - Go to "APIs & Services" > "Library"
       - Search for "Gmail API" and enable it
       - Search for "Google Drive API" and enable it
@@ -25,26 +26,27 @@ Setup Instructions for Iskon Invoice Processor
       - Click "Create Credentials" > "OAuth client ID"
       - Choose "Desktop app" as application type
       - Download the credentials JSON file
-      - Save it as "credentials.json" in the same directory as the script
+      - Rename it to match the expected filename in the project root:
+        client_secret_544079871095-7eo15ghsvks1u43urcft84afblheu732.apps.googleusercontent.com.json
 
-4. Configure the script:
-   Edit iskon_invoice_processor.py and adjust:
-   - SENDER_EMAIL: Set to exact sender email (e.g., 'noreply@iskon.hr')
-   - SEARCH_DAYS: How many days back to search
-   - DRIVE_FOLDER_NAME: Name of folder in Google Drive
+4. Run a processor:
+   python3 main.py iskon
+   python3 main.py tomato
+   python3 main.py all
 
-5. Run the script:
-   python3 iskon_invoice_processor.py
+   On first run, a browser window will open for OAuth authentication.
+   Grant the requested permissions (Gmail read/send, Drive file access).
+   A token.json file will be created for future runs.
 
-   On first run, it will open a browser for OAuth authentication.
-   Grant the requested permissions (Gmail read, Drive file access).
+5. Set up automation (optional):
+   The included run_on_10th_workday.sh script checks whether today is the
+   10th working day of the month and runs both processors if so.
 
-6. Set up automation (optional):
    Add to crontab to run daily at 9 AM:
-   0 9 * * * /usr/bin/python3 /home/ivan/iskon_invoice_processor.py
+   0 9 * * * /home/ivan/Documents/e-mail_processor/run_on_10th_workday.sh
 
 Notes:
 - The script creates a "token.json" file after first authentication
-- Invoices are saved to Google Drive in the specified folder
-- You'll receive an email notification with extracted barcodes
-- Adjust SENDER_EMAIL to match your Iskon sender address
+- Invoices are saved to Google Drive in the "Iskon" and "Tomato" folders
+- You'll receive an email notification with a processing summary
+- Both processors now skip duplicate files automatically

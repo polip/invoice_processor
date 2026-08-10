@@ -4,23 +4,23 @@ on:
   schedule:
     # Run daily at 9:00 AM UTC on weekdays to check for 10th working day
     - cron: '0 9 * * 1-5'
-  
+
   # Allow manual trigger from Actions tab
   workflow_dispatch:
 
 jobs:
   process-invoices:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
-      - name: Set up Python (for check)
+
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-      
+          python-version: '3.12'
+
       - name: Check if 10th working day
         id: check_workday
         run: |
@@ -29,25 +29,19 @@ jobs:
           else
             echo "is_10th_workday=false" >> $GITHUB_OUTPUT
           fi
-      
-      - name: Set up Python
-        if: steps.check_workday.outputs.is_10th_workday == 'true'
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      
+
       - name: Install system dependencies
         if: steps.check_workday.outputs.is_10th_workday == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y libzbar0 poppler-utils
-      
+
       - name: Install uv
         if: steps.check_workday.outputs.is_10th_workday == 'true'
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      
+
       - name: Setup credentials
         if: steps.check_workday.outputs.is_10th_workday == 'true'
         env:
@@ -56,18 +50,17 @@ jobs:
         run: |
           echo "$CLIENT_SECRET" > client_secret_544079871095-7eo15ghsvks1u43urcft84afblheu732.apps.googleusercontent.com.json
           echo "$TOKEN_JSON" > token.json
-      
+
       - name: Run Iskon processor
         if: steps.check_workday.outputs.is_10th_workday == 'true'
         run: |
           uv run iskon.py
-      
+
       - name: Run Tomato processor
         if: steps.check_workday.outputs.is_10th_workday == 'true'
         run: |
           uv run tomato.py
-        continue-on-error: true
-      
+
       - name: Update token (if refreshed)
         if: always()
         run: |

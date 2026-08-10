@@ -4,10 +4,21 @@
 Small Python utility that fetches telecom invoices (Iskon, Tomato) from Gmail, extracts attachments and barcodes, and uploads them to Google Drive. Runs automatically on the 10th working day of each month via GitHub Actions.
 
 ## Real Entrypoints
+- **`main.py`** — Unified CLI entrypoint. Supports `python main.py iskon`, `python main.py tomato`, and `python main.py all`.
 - **`iskon.py`** — Processes Iskon invoices (PDF/PNG attachments from `e-racun@iskon.hr`).
 - **`tomato.py`** — Processes Tomato invoices (inline barcode images + PDFs from `moj.racun@tomato.com.hr`).
 - **`check_10th_workday.py`** — Exits `0` if today is the 10th working day, `1` otherwise. Used by CI and cron.
-- **`main.py`** — Stub/placeholder. Do not use as an entrypoint.
+
+## Shared Module
+- **`google_services.py`** — Contains all common logic:
+  - OAuth authentication (`authenticate`)
+  - Gmail search with pagination (`search_emails`)
+  - Attachment extraction (`get_attachments`)
+  - Drive folder management (`get_or_create_drive_folder`)
+  - Drive deduplication (`file_exists_in_drive`)
+  - Drive upload (`upload_to_drive`)
+  - Email notifications (`send_notification`)
+  - Logging setup (`setup_logging`)
 
 ## Environment & Dependencies
 - **Python**: `>=3.12` per `pyproject.toml` and `.python-version`.
@@ -19,22 +30,21 @@ Small Python utility that fetches telecom invoices (Iskon, Tomato) from Gmail, e
 ## Running Locally
 ```bash
 # With uv (preferred)
-uv run iskon.py
-uv run tomato.py
+uv run main.py all
+uv run main.py iskon
+uv run main.py tomato
 
 # With pip/venv
 pip install -r requirements.txt
-python3 iskon.py
-python3 tomato.py
+python3 main.py all
 ```
 
 ## Known Code Issues (Agent Should Be Aware)
-- **`tomato.py` hardcoded OAuth filename bug**: Line 51 references `'client_secret_544079871095-...googleusercontent.com'` **without `.json` extension**. `iskon.py` line 46 has the correct filename **with** `.json`. This is a real bug that will break Tomato auth on fresh runs.
-- **`run_on_10th_workday.sh` is corrupted**: First line contains a malformed crontab entry merged into the shebang. It also references the old script name `iskon_invoice_processor.py` (does not exist anymore).
-- **`main.py` is a stub**: Only prints a hello message. Do not treat it as the app entrypoint.
+- **`check_10th_workday.py` does not account for public holidays**: It counts Monday–Friday only.
+- **No automated token secret update in CI**: If `token.json` refreshes in GitHub Actions, the new token is lost when the job ends. Manual secret update is required, or switch to a Service Account for fully headless operation.
 
 ## Authentication & Secrets
-- **OAuth scopes** (hardcoded in both scripts): Gmail readonly, Gmail send, Drive file.
+- **OAuth scopes** (defined once in `google_services.py`): Gmail readonly, Gmail send, Drive file.
 - **Sensitive files** (gitignored, never commit):
   - `token.json` — generated after first interactive OAuth flow
   - `client_secret_544079871095-7eo15ghsvks1u43urcft84afblheu732.apps.googleusercontent.com.json` — downloaded from Google Cloud Console
@@ -44,13 +54,13 @@ python3 tomato.py
 - Workflow: `.github/workflows/process-invoices.yml`
 - **Trigger**: Weekdays at 9:00 AM UTC (`cron: '0 9 * * 1-5'`) + manual `workflow_dispatch`.
 - **Logic**: Checks 10th working day via `check_10th_workday.py`; if true, runs both processors.
-- **CI Python version**: Uses 3.11 (note: project requires 3.12+ — this is a mismatch).
+- **CI Python version**: Uses 3.12 (matches project requirement).
 - **CI secrets required**: `GOOGLE_CLIENT_SECRET`, `GOOGLE_TOKEN_JSON`.
-- **Tomato step** has `continue-on-error: true`, so CI won't fail if Tomato processing fails.
+- Both processor steps now fail the workflow on error (no `continue-on-error`).
 
 ## Drive & Deduplication
 - Drive folders are hardcoded: `"Iskon"` and `"Tomato"`.
-- `tomato.py` checks for existing files by filename before uploading (skips duplicates). `iskon.py` does **not** deduplicate — it will upload duplicates.
+- Both `iskon.py` and `tomato.py` now check for existing files by filename before uploading (skips duplicates). The deduplication logic lives in `google_services.py`.
 
 ## Working Day Logic
 - `check_10th_workday.py` counts Monday–Friday only. **Does not account for public holidays**.
@@ -59,6 +69,9 @@ python3 tomato.py
 ```bash
 # Check if today is the 10th working day
 python3 check_10th_workday.py
+
+# Run unified entrypoint
+uv run main.py all
 
 # Run individual processors
 uv run iskon.py

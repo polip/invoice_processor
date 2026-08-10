@@ -8,10 +8,12 @@ Email invoice processor for Croatian telecom providers (Iskon and Tomato). Autom
 
 - **Automated Email Fetching**: Searches Gmail for invoices from Iskon and Tomato
 - **Attachment Processing**: Extracts PDF and PNG attachments from emails
-- **Barcode Extraction**: Scans and extracts barcodes from invoice images
+- **Barcode Extraction**: Scans and extracts barcodes from Tomato invoice images
 - **Google Drive Integration**: Uploads processed invoices to organized folders
 - **Smart Scheduling**: Run automatically on the 10th working day of each month
 - **Email Notifications**: Sends summary notifications after processing
+- **Duplicate Prevention**: Skips files that already exist in Drive
+- **Unified Entrypoint**: Run individual or both processors from one command
 
 ## Prerequisites
 
@@ -67,7 +69,8 @@ brew install poppler zbar
    - Click "Create Credentials" → "OAuth client ID"
    - Choose "Desktop app" as application type
    - Download the credentials JSON file
-   - Save it in the project directory 
+   - Rename and save it in the project root as:
+     `client_secret_544079871095-7eo15ghsvks1u43urcft84afblheu732.apps.googleusercontent.com.json`
 
 ### 2. First-Time Authentication
 
@@ -96,13 +99,16 @@ DRIVE_FOLDER_NAME = 'Tomato'
 
 ### Manual Execution
 
-**Process Iskon invoices:**
+**Unified entrypoint (recommended):**
 ```bash
-python3 iskon.py
+python3 main.py iskon      # Process Iskon only
+python3 main.py tomato     # Process Tomato only
+python3 main.py all        # Process both
 ```
 
-**Process Tomato invoices:**
+**Individual processors:**
 ```bash
+python3 iskon.py
 python3 tomato.py
 ```
 
@@ -121,12 +127,12 @@ The project includes automation to run on the 10th working day of each month.
 crontab -e
 
 # Add this line to run daily at 9 AM
-0 9 * * * /home/ivan/Documents/e-mail_processor/run_on_10th_workday.sh >> /tmp/iskon_cron.log 2>&1
+0 9 * * * /home/ivan/Documents/e-mail_processor/run_on_10th_workday.sh >> /tmp/invoice_processor.log 2>&1
 ```
 
 The script will:
 1. Check if today is the 10th working day
-2. Run the invoice processor if true
+2. Run both invoice processors if true
 3. Skip execution otherwise
 
 ## Project Structure
@@ -135,15 +141,16 @@ The script will:
 e-mail_processor/
 ├── iskon.py                     # Iskon invoice processor
 ├── tomato.py                    # Tomato invoice processor
+├── google_services.py           # Shared auth, Drive, and Gmail helpers
+├── main.py                      # Unified CLI entrypoint
 ├── check_10th_workday.py        # Working day calculator
-├── run_on_10th_workday.sh       # Automation script
-├── main.py                      # Main entry point
+├── run_on_10th_workday.sh       # Shell automation script
 ├── requirements.txt             # Python dependencies
 ├── pyproject.toml              # Project configuration
 ├── client_secret_*.json        # Google OAuth credentials
 ├── token.json                  # Generated auth token (after first run)
 ├── README.md                   # This file
-└── README_setup.txt            # Original setup notes
+└── README_setup.txt            # Detailed setup notes
 ```
 
 ## How It Works
@@ -152,17 +159,19 @@ e-mail_processor/
 1. Searches Gmail for emails from `e-racun@iskon.hr`
 2. Extracts PDF and PNG attachments
 3. Uploads files to "Iskon" folder in Google Drive
-4. Sends notification email with summary
+4. Skips files that already exist in Drive
+5. Sends notification email with summary
 
 ### Tomato Processor
 1. Searches Gmail for emails from `moj.racun@tomato.com.hr`
-2. Extracts inline images and barcodes from HTML email
-3. Saves PDF attachments
+2. Extracts inline barcode images and PDF attachments
+3. Saves PDF attachments and barcode PNGs
 4. Uploads to "Tomato" folder in Google Drive
-5. Sends notification with extracted barcode information
+5. Skips files that already exist in Drive
+6. Sends notification with processing summary
 
 ### Working Day Scheduler
-- Counts only Monday-Friday as working days
+- Counts only Monday–Friday as working days
 - Excludes weekends (Saturday/Sunday)
 - Note: Does not account for public holidays
 
@@ -193,8 +202,6 @@ pip install --upgrade -r requirements.txt
 - `google-auth-oauthlib` - Google OAuth authentication
 - `google-auth-httplib2` - HTTP library for Google APIs
 - `google-api-python-client` - Google API client
-- `PyPDF2` - PDF processing
-- `pdf2image` - Convert PDF to images
 - `pyzbar` - Barcode scanning
 - `Pillow` - Image processing
 - `beautifulsoup4` - HTML parsing
@@ -216,4 +223,4 @@ Ivan
 
 ---
 
-*Last updated: March 2026*
+*Last updated: August 2026*
